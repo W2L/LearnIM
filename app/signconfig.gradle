@@ -1,0 +1,11 @@
+apply plugin: 'com.android.application'
+android {
+    signingConfigs {
+        keycfg {
+            keyAlias '111111'
+            keyPassword '111111'
+            storeFile file('C:\\Users\\po\\Desktop\\ju.jks')
+            storePassword '111111'
+        }
+    }
+}

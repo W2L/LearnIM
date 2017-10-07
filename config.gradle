@@ -1,0 +1,6 @@
+ext {
+    VCODE = '10'
+    VNAME = '10.0'
+
+    OUT_PUT_DIR = 'C:/Users/po/Desktop/dest'
+}

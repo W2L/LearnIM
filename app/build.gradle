@@ -1,17 +1,63 @@
 apply plugin: 'com.android.application'
+apply from: 'signconfig.gradle'
+
+def releaseTime() {
+    return new Date().format("yyyy-MM-dd_HH-mm-ss", TimeZone.getTimeZone("GMT+08:00"))
+}
 
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.1"
+
+    def BASE_URL_DEV = "\"base_url_dev\""
+    def BASE_URL_DEBUG = "\"base_url_debug\""
+    def BASE_URL_PRE = "\"base_url_pre\""
+    def BASE_URL_RELEASE = "\"base_url_release\""
+
+    def TKAPPID_DEV = "ewewewew"
+    def TKAPPID_RELEASE = "ewewewew"
+
+    def VERSIONCODE = 1
+    def VERSIONNAME = '1.0'
+
     defaultConfig {
         applicationId "lilin.im.client"
         minSdkVersion 19
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        versionCode project.hasProperty('VCODE') ? Integer.parseInt(VCODE) : VERSIONCODE
+        versionName project.hasProperty("VNAME") ? VNAME : VERSIONNAME
+
+
+        buildConfigField("String", "BASE_URL", "${BASE_URL_RELEASE}")
+
+        manifestPlaceholders = [
+                TKAPPID: "${TKAPPID_DEV}"
+        ]
+
+        signingConfig signingConfigs.keycfg
     }
+
     buildTypes {
+        dev {
+            buildConfigField("String", "BASE_URL", "${BASE_URL_DEV}")
+        }
+
+        debug {
+            buildConfigField("String", "BASE_URL", "${BASE_URL_DEBUG}")
+        }
+
+        pre {
+            buildConfigField("String", "BASE_URL", "${BASE_URL_PRE}")
+        }
+
         release {
+            buildConfigField("String", "BASE_URL", "${BASE_URL_RELEASE}")
+            manifestPlaceholders = [
+                    TKAPPID: "${TKAPPID_RELEASE}"
+            ]
+
+            signingConfig signingConfigs.keycfg
+
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -20,8 +66,35 @@ android {
     dataBinding {
         enabled = true
     }
-}
 
+    productFlavors {
+        "huawei" {}
+        "xiaomi" {}
+    }
+
+    //修改生成的最终文件名
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                File outputDirectory = new File(project.hasProperty('OUT_PUT_DIR') ? OUT_PUT_DIR : outputFile.parent);
+                def fileName
+                if (!project.hasProperty('FILE_NAME')) {
+                    if (variant.buildType.name == "release" || variant.buildType.name == "pre") {
+                        fileName = "app_v${defaultConfig.versionName}_${releaseTime()}_${variant.productFlavors[0].name}_${variant.buildType.name}.apk"
+                    } else if (variant.buildType.name == "debug") {
+                        fileName = "app_v${defaultConfig.versionName}_${releaseTime()}_${variant.buildType.name}.apk"
+                    } else {
+                        fileName = outputFile.name
+                    }
+                } else {
+                    fileName = FILE_NAME
+                }
+                output.outputFile = new File(outputDirectory, fileName)
+            }
+        }
+    }
+}
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
